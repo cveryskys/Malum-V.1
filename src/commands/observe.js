@@ -39,44 +39,47 @@ module.exports = {
     const discordID = interaction.user.id;
     const discordTag = `${interaction.user.username}#${interaction.user.discriminator}`;
 
-    // Load + create file if missing
+    // Step 1: Show "loading" to the user
+    await interaction.reply({
+      content: "⏳ Loading and verifying your info...",
+      ephemeral: true,
+    });
+
+    // Step 2: Safely load and update staff-data.json
     let data = {};
     if (!fs.existsSync(dataPath)) {
-      console.warn("⚠️ staff-data.json not found — creating new file.");
       fs.writeFileSync(dataPath, "{}");
+      console.log("🆕 Created staff-data.json");
     }
 
     try {
       const raw = fs.readFileSync(dataPath, "utf-8");
       data = JSON.parse(raw || "{}");
     } catch (err) {
-      console.error("❌ Failed to read staff-data.json:", err);
-      return interaction.reply({
-        content: "Internal error: could not read data file.",
-        ephemeral: true,
+      console.error("❌ Error reading staff-data.json:", err);
+      return interaction.editReply({
+        content: "⚠️ Internal error while loading data file.",
       });
     }
 
-    // Write updated data
     data[robloxUsername] = { discordID, discordTag };
 
     try {
       fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-      console.log(`✅ Logged [${robloxUsername}] → [${discordTag}] to staff-data.json`);
+      console.log(`✅ Logged ${robloxUsername} → ${discordTag}`);
     } catch (err) {
       console.error("❌ Failed to write staff-data.json:", err);
-      return interaction.reply({
-        content: "Internal error: could not save data.",
-        ephemeral: true,
+      return interaction.editReply({
+        content: "⚠️ Failed to save your verification. Please try again.",
       });
     }
 
-    // Embed + button
+    // Step 3: Send final embed
     const embed = new EmbedBuilder()
       .setColor(0x000000)
       .setTitle("Prove Yourself")
       .setDescription(
-        `To begin tracking your shifts, join the game below.\n\n` +
+        `To begin tracking your shifts, join the verification game below.\n\n` +
         `**Roblox Username:** \`${robloxUsername}\``
       )
       .setFooter({ text: "Staff Verification Required" });
@@ -88,10 +91,10 @@ module.exports = {
         .setURL("https://www.roblox.com/games/114119023341299/Staff-Verification")
     );
 
-    await interaction.reply({
+    await interaction.editReply({
+      content: "",
       embeds: [embed],
       components: [buttonRow],
-      ephemeral: true,
     });
   },
 };
