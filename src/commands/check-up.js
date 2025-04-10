@@ -1,11 +1,16 @@
 const {
   SlashCommandBuilder,
   EmbedBuilder,
-  PermissionFlagsBits,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
 } = require("discord.js");
+
+const fs = require("fs");
+const path = require("path");
+const dataPath = path.join(__dirname, "../data/staff-data.json");
+
+if (!fs.existsSync(dataPath)) fs.writeFileSync(dataPath, "{}");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -33,6 +38,15 @@ module.exports = {
     }
 
     const robloxUsername = interaction.options.getString("roblox-user");
+    const discordID = interaction.user.id;
+    const discordTag = `${interaction.user.username}#${interaction.user.discriminator}`;
+
+    const currentData = JSON.parse(fs.readFileSync(dataPath, "utf-8"));
+    currentData[robloxUsername] = {
+      discordID,
+      discordTag
+    };
+    fs.writeFileSync(dataPath, JSON.stringify(currentData, null, 2));
 
     const embed = new EmbedBuilder()
       .setColor(0x000000)
