@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "description": "Created by ayden, for TNC",
   "main": "src/scripts/server.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+"scripts": {
+  "postinstall": "node src/scripts/deploy-commands.js",
+  "start": "node src/scripts/server.js"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
