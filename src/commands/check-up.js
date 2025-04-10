@@ -6,13 +6,7 @@ const {
   ButtonStyle,
 } = require("discord.js");
 
-const fs = require("fs");
-const path = require("path");
-const dataPath = path.join(__dirname, "../data/staff-data.json");
-
-if (!fs.existsSync(dataPath)) {
-  fs.writeFileSync(dataPath, "{}");
-}
+const db = require("../modules/db");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -33,7 +27,7 @@ module.exports = {
 
     if (!memberRoles.has(requiredRole)) {
       await interaction.reply({
-        content: "You do not have permission to use this command.",
+        content: "❌ You do not have permission to use this command.",
         ephemeral: true,
       });
       return;
@@ -43,29 +37,32 @@ module.exports = {
     const discordID = interaction.user.id;
     const discordTag = `${interaction.user.username}#${interaction.user.discriminator}`;
 
-    let data = {};
-    try {
-      const raw = fs.readFileSync(dataPath, "utf-8");
-      data = JSON.parse(raw || "{}");
-    } catch (err) {
-      console.error("Failed to read staff-data.json:", err);
-    }
-
-    data[robloxUsername] = { discordID, discordTag };
+    await interaction.reply({
+      content: "⏳ Saving your data...",
+      ephemeral: true,
+    });
 
     try {
-      fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-      console.log(`Logged ${robloxUsername} to staff-data.json`);
+      await db.query(
+        `INSERT INTO staff_verification (roblox_username, discord_id, discord_tag)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (roblox_username) DO UPDATE SET discord_id = $2, discord_tag = $3`,
+        [robloxUsername, discordID, discordTag]
+      );
+      console.log(`✅ Logged ${robloxUsername} → ${discordTag}`);
     } catch (err) {
-      console.error("Failed to write staff-data.json:", err);
+      console.error("❌ Database insert failed:", err);
+      return interaction.editReply({
+        content: "❌ Could not verify you. Please try again later.",
+      });
     }
 
     const embed = new EmbedBuilder()
       .setColor(0x000000)
       .setTitle("Prove Yourself")
       .setDescription(
-        `To begin tracking all your shift data properly, please join the verification game below so we can link your Roblox account to you!\n\n` +
-        `**Roblox Username Provided:** \`${robloxUsername}\``
+        `To begin tracking your shifts, join the verification game below.\n\n` +
+        `**Roblox Username:** \`${robloxUsername}\``
       )
       .setFooter({ text: "Staff Verification Required" });
 
@@ -76,10 +73,10 @@ module.exports = {
         .setURL("https://www.roblox.com/games/114119023341299/Staff-Verification")
     );
 
-    await interaction.reply({
+    await interaction.editReply({
+      content: "",
       embeds: [embed],
       components: [buttonRow],
-      ephemeral: true,
     });
   },
 };
