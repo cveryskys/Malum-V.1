@@ -5,6 +5,7 @@ const commandHandler = require("../handlers/commandHandler");
 const roblox = require("../modules/roblox");
 const tracking = require("../tracking/rblxTracking");
 const schedule = require("node-schedule");
+const verifyAPI = require("../verification/verifyAPI");
 
 const app = express();
 const client = new Client({
@@ -53,6 +54,8 @@ app.post("/tracking", async (req, res) => {
     res.status(500).send("Tracking failed.");
   }
 });
+
+app.use("/verify", verifyAPI);
 
 app.listen(process.env.PORT || 3000, () => {
   console.log(`Express running on port ${process.env.PORT || 3000}`);
