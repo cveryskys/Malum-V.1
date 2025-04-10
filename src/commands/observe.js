@@ -1,61 +1,97 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const ranks = require("../data/ranks.json");
-const { noblox } = require("../modules/roblox");
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} = require("discord.js");
+
+const fs = require("fs");
+const path = require("path");
+const dataPath = path.join(__dirname, "../data/staff-data.json");
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("observe")
-    .setDescription("observe sumbodys roblox profile")
-    .addStringOption((option) =>
-      option
-        .setName("username")
-        .setDescription("username of person ur observing")
+    .setName("check-up")
+    .setDescription("Begin your staff tracking verification.")
+    .addStringOption(option =>
+      option.setName("roblox-user")
+        .setDescription("Your Roblox username")
         .setRequired(true)
     )
     .setDefaultMemberPermissions(0),
 
-  requiredRank: "HR",
+  requiredRole: "1155529017718493234",
 
   async execute(interaction) {
-    const username = interaction.options.getString("username");
     const memberRoles = interaction.member.roles.cache;
-    const requiredRoleId = ranks[module.exports.requiredRank];
+    const requiredRole = module.exports.requiredRole;
 
-    if (!memberRoles.has(requiredRoleId)) {
+    if (!memberRoles.has(requiredRole)) {
       await interaction.reply({
-        content: "You do not have permission to use this command.",
-        flags: 1 << 6,
+        content: "❌ You do not have permission to use this command.",
+        ephemeral: true,
       });
       return;
     }
 
-    await interaction.deferReply({ ephemeral: true });
+    const robloxUsername = interaction.options.getString("roblox-user");
+    const discordID = interaction.user.id;
+    const discordTag = `${interaction.user.username}#${interaction.user.discriminator}`;
+
+    // Load + create file if missing
+    let data = {};
+    if (!fs.existsSync(dataPath)) {
+      console.warn("⚠️ staff-data.json not found — creating new file.");
+      fs.writeFileSync(dataPath, "{}");
+    }
 
     try {
-      const userId = await noblox.getIdFromUsername(username);
-      const [userInfo, groupRank, thumbnail] = await Promise.all([
-        noblox.getPlayerInfo(userId),
-        noblox.getRankNameInGroup(32993985, userId),
-        noblox.getPlayerThumbnail(userId, 420, "png", false, "headshot"),
-      ]);
-
-      const embed = new EmbedBuilder()
-        .setColor(0x000000)
-        .setTitle(userInfo.displayName)
-        .setDescription(
-          `**Username:** \`${userInfo.username}\`\n**Bio:** \`${
-            userInfo.blurb || "No bio set"
-          }\`\n**Group Rank:** \`${groupRank}\``
-        )
-        .setThumbnail(thumbnail[0]?.imageUrl || null)
-        .setFooter({ text: `User ID: ${userId}` });
-
-      await interaction.editReply({ embeds: [embed] });
+      const raw = fs.readFileSync(dataPath, "utf-8");
+      data = JSON.parse(raw || "{}");
     } catch (err) {
-      console.error(err);
-      await interaction.editReply({
-        content: "Failed to fetch user data. Make sure the username is valid.",
+      console.error("❌ Failed to read staff-data.json:", err);
+      return interaction.reply({
+        content: "Internal error: could not read data file.",
+        ephemeral: true,
       });
     }
+
+    // Write updated data
+    data[robloxUsername] = { discordID, discordTag };
+
+    try {
+      fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+      console.log(`✅ Logged [${robloxUsername}] → [${discordTag}] to staff-data.json`);
+    } catch (err) {
+      console.error("❌ Failed to write staff-data.json:", err);
+      return interaction.reply({
+        content: "Internal error: could not save data.",
+        ephemeral: true,
+      });
+    }
+
+    // Embed + button
+    const embed = new EmbedBuilder()
+      .setColor(0x000000)
+      .setTitle("Prove Yourself")
+      .setDescription(
+        `To begin tracking your shifts, join the game below.\n\n` +
+        `**Roblox Username:** \`${robloxUsername}\``
+      )
+      .setFooter({ text: "Staff Verification Required" });
+
+    const buttonRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setLabel("Visit Game")
+        .setStyle(ButtonStyle.Link)
+        .setURL("https://www.roblox.com/games/114119023341299/Staff-Verification")
+    );
+
+    await interaction.reply({
+      embeds: [embed],
+      components: [buttonRow],
+      ephemeral: true,
+    });
   },
 };
