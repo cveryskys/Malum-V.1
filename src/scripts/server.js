@@ -8,6 +8,8 @@ const schedule = require("node-schedule");
 const verifyAPI = require("../verification/verifyAPI");
 
 const app = express();
+app.use(express.json());
+
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
@@ -37,26 +39,25 @@ client.once("ready", async () => {
 
 client.login(process.env.DISCORD_TOKEN);
 
-app.use(express.json());
-
 app.post("/tracking", async (req, res) => {
   const { robloxId, sessionMs, messages } = req.body;
 
   if (!robloxId || !sessionMs) {
-    return res.status(400).send("Missing required tracking data.");
+    return res.status(400).send("❌ Missing required tracking data.");
   }
 
   try {
     await tracking.sendShiftEmbed(client, robloxId, sessionMs, messages || 0);
-    res.status(200).send("Shift data received.");
+    res.status(200).send("✅ Shift data received.");
   } catch (err) {
-    console.error("Error in /tracking:", err);
-    res.status(500).send("Tracking failed.");
+    console.error("❌ Error in /tracking:", err);
+    res.status(500).send("❌ Tracking failed.");
   }
 });
 
 app.use("/verify", verifyAPI);
 
-app.listen(process.env.PORT || 3000, () => {
-  console.log(`Express running on port ${process.env.PORT || 3000}`);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Express running on port ${PORT}`);
 });
