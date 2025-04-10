@@ -6,13 +6,13 @@ const {
   ButtonStyle,
 } = require("discord.js");
 
-const db = require('../../modules/db');
+const db = require("../modules/db");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("check-up")
     .setDescription("Begin your staff tracking verification.")
-    .addStringOption(option =>
+    .addStringOption((option) =>
       option.setName("roblox-user")
         .setDescription("Your Roblox username")
         .setRequired(true)
@@ -44,11 +44,13 @@ module.exports = {
 
     try {
       await db.query(
-        `INSERT INTO staff_verification (roblox_username, discord_id, discord_tag)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (roblox_username) DO UPDATE SET discord_id = $2, discord_tag = $3`,
-        [robloxUsername, discordID, discordTag]
+        `INSERT INTO staff_verification (roblox_username, discord_id, discord_tag, verified)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (roblox_username)
+         DO UPDATE SET discord_id = $2, discord_tag = $3`,
+        [robloxUsername, discordID, discordTag, false]
       );
+
       console.log(`✅ Logged ${robloxUsername} → ${discordTag}`);
     } catch (err) {
       console.error("❌ Database insert failed:", err);
