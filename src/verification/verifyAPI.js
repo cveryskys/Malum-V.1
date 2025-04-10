@@ -3,40 +3,43 @@ const fs = require("fs");
 const path = require("path");
 
 const router = express.Router();
-const staffPath = path.join(__dirname, "staff.json");
+const dataPath = path.join(__dirname, "../data/staff-data.json");
 
-if (!fs.existsSync(staffPath)) fs.writeFileSync(staffPath, "{}");
-let staff = require(staffPath);
+if (!fs.existsSync(dataPath)) fs.writeFileSync(dataPath, "{}");
 
-function saveStaff() {
-  fs.writeFileSync(staffPath, JSON.stringify(staff, null, 2));
+function loadData() {
+  return JSON.parse(fs.readFileSync(dataPath, "utf-8"));
 }
 
 router.get("/getid/:roblox", (req, res) => {
   const roblox = req.params.roblox;
-  const discordID = staff[roblox];
-  if (!discordID) return res.status(404).send("Not found.");
-  res.send({ discordID });
+  const data = loadData();
+  const entry = data[roblox];
+  if (!entry) return res.status(404).send("Not found.");
+  res.send({ discordID: entry.discordID });
 });
 
 router.get("/getuser/:roblox", (req, res) => {
   const roblox = req.params.roblox;
-  const discordID = staff[roblox];
-  if (!discordID) return res.status(404).send("Not found.");
-  res.send({ discordUser: discordID });
+  const data = loadData();
+  const entry = data[roblox];
+  if (!entry) return res.status(404).send("Not found.");
+  res.send({ discordUser: entry.discordTag });
 });
 
 router.post("/checkyes", express.json(), (req, res) => {
   const { robloxUsername, discordID } = req.body;
   if (!robloxUsername || !discordID) return res.status(400).send("Missing data.");
-  staff[robloxUsername] = discordID;
-  saveStaff();
+  const data = loadData();
+  data[robloxUsername] = { discordID, discordTag: "Verified via game" };
+  fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
   res.send("Verified");
 });
 
 router.get("/checkno/:roblox", (req, res) => {
   const roblox = req.params.roblox;
-  if (!staff[roblox]) return res.send("User not verified.");
+  const data = loadData();
+  if (!data[roblox]) return res.send("User not verified.");
   res.send("Already verified.");
 });
 
