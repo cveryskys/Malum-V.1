@@ -10,7 +10,9 @@ const fs = require("fs");
 const path = require("path");
 const dataPath = path.join(__dirname, "../data/staff-data.json");
 
-if (!fs.existsSync(dataPath)) fs.writeFileSync(dataPath, "{}");
+if (!fs.existsSync(dataPath)) {
+  fs.writeFileSync(dataPath, "{}");
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -23,7 +25,7 @@ module.exports = {
     )
     .setDefaultMemberPermissions(0),
 
-  requiredRole: "1155529017718493234", 
+  requiredRole: "1155529017718493234",
 
   async execute(interaction) {
     const memberRoles = interaction.member.roles.cache;
@@ -41,12 +43,22 @@ module.exports = {
     const discordID = interaction.user.id;
     const discordTag = `${interaction.user.username}#${interaction.user.discriminator}`;
 
-    const currentData = JSON.parse(fs.readFileSync(dataPath, "utf-8"));
-    currentData[robloxUsername] = {
-      discordID,
-      discordTag
-    };
-    fs.writeFileSync(dataPath, JSON.stringify(currentData, null, 2));
+    let data = {};
+    try {
+      const raw = fs.readFileSync(dataPath, "utf-8");
+      data = JSON.parse(raw || "{}");
+    } catch (err) {
+      console.error("Failed to read staff-data.json:", err);
+    }
+
+    data[robloxUsername] = { discordID, discordTag };
+
+    try {
+      fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+      console.log(`Logged ${robloxUsername} to staff-data.json`);
+    } catch (err) {
+      console.error("Failed to write staff-data.json:", err);
+    }
 
     const embed = new EmbedBuilder()
       .setColor(0x000000)
