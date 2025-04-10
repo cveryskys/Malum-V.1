@@ -12,7 +12,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("check-up")
     .setDescription("Begin your staff tracking verification.")
-    .addStringOption((option) =>
+    .addStringOption(option =>
       option.setName("roblox-user")
         .setDescription("Your Roblox username")
         .setRequired(true)
@@ -26,11 +26,10 @@ module.exports = {
     const requiredRole = module.exports.requiredRole;
 
     if (!memberRoles.has(requiredRole)) {
-      await interaction.reply({
+      return interaction.reply({
         content: "❌ You do not have permission to use this command.",
         ephemeral: true,
       });
-      return;
     }
 
     const robloxUsername = interaction.options.getString("roblox-user");
@@ -45,40 +44,38 @@ module.exports = {
     try {
       await db.query(
         `INSERT INTO staff_verification (roblox_username, discord_id, discord_tag, verified)
-         VALUES ($1, $2, $3, $4)
-         ON CONFLICT (roblox_username)
-         DO UPDATE SET discord_id = $2, discord_tag = $3`,
-        [robloxUsername, discordID, discordTag, false]
+         VALUES ($1, $2, $3, false)
+         ON CONFLICT (roblox_username) DO UPDATE 
+         SET discord_id = $2, discord_tag = $3, verified = false`,
+        [robloxUsername, discordID, discordTag]
       );
 
-      console.log(`✅ Logged ${robloxUsername} → ${discordTag}`);
+      const embed = new EmbedBuilder()
+        .setColor(0x000000)
+        .setTitle("Prove Yourself")
+        .setDescription(
+          `To begin tracking your shifts, join the verification game below.\n\n` +
+          `**Roblox Username:** \`${robloxUsername}\``
+        )
+        .setFooter({ text: "Staff Verification Required" });
+
+      const buttonRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setLabel("Visit Game")
+          .setStyle(ButtonStyle.Link)
+          .setURL("https://www.roblox.com/games/114119023341299/Staff-Verification")
+      );
+
+      await interaction.editReply({
+        content: "",
+        embeds: [embed],
+        components: [buttonRow],
+      });
     } catch (err) {
-      console.error("❌ Database insert failed:", err);
-      return interaction.editReply({
+      console.error("❌ Database error:", err);
+      await interaction.editReply({
         content: "❌ Could not verify you. Please try again later.",
       });
     }
-
-    const embed = new EmbedBuilder()
-      .setColor(0x000000)
-      .setTitle("Prove Yourself")
-      .setDescription(
-        `To begin tracking your shifts, join the verification game below.\n\n` +
-        `**Roblox Username:** \`${robloxUsername}\``
-      )
-      .setFooter({ text: "Staff Verification Required" });
-
-    const buttonRow = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setLabel("Visit Game")
-        .setStyle(ButtonStyle.Link)
-        .setURL("https://www.roblox.com/games/114119023341299/Staff-Verification")
-    );
-
-    await interaction.editReply({
-      content: "",
-      embeds: [embed],
-      components: [buttonRow],
-    });
   },
 };

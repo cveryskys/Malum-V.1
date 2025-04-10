@@ -1,29 +1,27 @@
 const express = require("express");
 const router = express.Router();
-const db = require("./db");
+const db = require("../modules/database");
 
-router.get("/verify/:username", async (req, res) => {
-  const { username } = req.params;
+router.post("/verify", async (req, res) => {
+  const { robloxUsername } = req.body;
+
+  if (!robloxUsername) {
+    return res.status(400).json({ error: "Missing robloxUsername" });
+  }
 
   try {
     const result = await db.query(
-      "SELECT * FROM staff_verification WHERE roblox_username = $1",
-      [username]
+      `UPDATE staff_verification SET verified = true WHERE roblox_username = $1`,
+      [robloxUsername]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ verified: false, message: "User not found" });
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "User not found" });
     }
 
-    const user = result.rows[0];
-    res.json({
-      verified: user.verified,
-      roblox_username: user.roblox_username,
-      discord_id: user.discord_id,
-      discord_tag: user.discord_tag
-    });
+    res.status(200).json({ success: true, message: "User marked as verified" });
   } catch (err) {
-    console.error("❌ Error in /verify route:", err);
+    console.error("❌ Error updating verification:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
