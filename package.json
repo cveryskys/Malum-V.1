@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "Created by ayden, for TNC",
   "main": "src/scripts/server.js",
-"scripts": {
-  "postinstall": "node src/scripts/deploy-commands.js",
-  "start": "node src/scripts/server.js"
-},
+  "scripts": {
+    "postinstall": "node src/scripts/deploy-commands.js",
+    "start": "node src/scripts/server.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -15,7 +15,20 @@
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
     "noblox.js": "^6.1.1",
-      "pg": "^8.11.3",
-    "node-schedule": "^2.1.1"
+    "node-schedule": "^2.1.1",
+    "pg": "^8.14.1",
+    "pg-cloudflare": "^1.1.1",
+    "pg-connection-string": "^2.7.0",
+    "pg-int8": "^1.0.1",
+    "pg-pool": "^3.8.0",
+    "pg-protocol": "^1.8.0",
+    "pg-types": "^2.2.0",
+    "pgpass": "^1.0.5",
+    "postgres-array": "^2.0.0",
+    "postgres-bytea": "^1.0.0",
+    "postgres-date": "^1.0.7",
+    "postgres-interval": "^1.2.0",
+    "split2": "^4.2.0",
+    "xtend": "^4.0.2"
   }
 }
