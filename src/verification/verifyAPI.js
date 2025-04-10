@@ -1,85 +1,31 @@
-const { Pool } = require("pg");
-require("dotenv").config();
+const express = require("express");
+const router = express.Router();
+const db = require("./db");
 
-const db = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+router.get("/verify/:username", async (req, res) => {
+  const { username } = req.params;
+
+  try {
+    const result = await db.query(
+      "SELECT * FROM staff_verification WHERE roblox_username = $1",
+      [username]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ verified: false, message: "User not found" });
+    }
+
+    const user = result.rows[0];
+    res.json({
+      verified: user.verified,
+      roblox_username: user.roblox_username,
+      discord_id: user.discord_id,
+      discord_tag: user.discord_tag
+    });
+  } catch (err) {
+    console.error("❌ Error in /verify route:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
-/**
- * Checks if the given Roblox username exists in the staff_verification table.
- * @param {string} username 
- * @returns {Promise<boolean>}
- */
-async function isUserVerified(username) {
-  try {
-    const res = await db.query(
-      `SELECT verified FROM staff_verification WHERE roblox_username = $1`,
-      [username]
-    );
-
-    if (res.rows.length === 0) return false;
-
-    return res.rows[0].verified === true;
-  } catch (err) {
-    console.error("❌ Error checking verification:", err);
-    return false;
-  }
-}
-
-/**
- * Marks the user as verified in the database.
- * @param {string} username - Roblox username
- * @returns {Promise<boolean>}
- */
-async function markUserAsVerified(username) {
-  try {
-    const res = await db.query(
-      `UPDATE staff_verification SET verified = true WHERE roblox_username = $1`,
-      [username]
-    );
-    return res.rowCount > 0;
-  } catch (err) {
-    console.error("❌ Error marking user as verified:", err);
-    return false;
-  }
-}
-
-/**
- * Retrieves all users marked as verified.
- * @returns {Promise<Array>}
- */
-async function getAllVerifiedUsers() {
-  try {
-    const res = await db.query(
-      `SELECT * FROM staff_verification WHERE verified = true`
-    );
-    return res.rows;
-  } catch (err) {
-    console.error("❌ Error fetching verified users:", err);
-    return [];
-  }
-}
-
-/**
- * Returns the entire staff_verification table.
- * @returns {Promise<Array>}
- */
-async function getAllStaffEntries() {
-  try {
-    const res = await db.query(`SELECT * FROM staff_verification`);
-    return res.rows;
-  } catch (err) {
-    console.error("❌ Error fetching staff entries:", err);
-    return [];
-  }
-}
-
-module.exports = {
-  isUserVerified,
-  markUserAsVerified,
-  getAllVerifiedUsers,
-  getAllStaffEntries,
-};
+module.exports = router;
