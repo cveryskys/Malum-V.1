@@ -10,6 +10,10 @@ const verifyAPI = require("../verification/verifyAPI");
 const app = express();
 app.use(express.json());
 
+
+const postMessage = require("./routes/postMessage");
+app.use("/post-message", postMessage);
+
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
