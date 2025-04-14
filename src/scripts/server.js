@@ -6,6 +6,8 @@ const roblox = require("../modules/roblox");
 const tracking = require("../tracking/rblxTracking");
 const schedule = require("node-schedule");
 const verifyAPI = require("../verification/verifyAPI");
+const PORT = process.env.PORT || 3000;
+
 
 const app = express();
 app.use(express.json());
@@ -61,7 +63,12 @@ app.post("/tracking", async (req, res) => {
 
 app.use("/verify", verifyAPI);
 
-const PORT = process.env.PORT || 3000;
+
+app.get("/", (_, res) => {
+  res.send("Server is online");
+});
+
+
 app.listen(PORT, () => {
-  console.log(`🚀 Express running on port ${PORT}`);
+  console.log(`Express running on port ${PORT}`);
 });
