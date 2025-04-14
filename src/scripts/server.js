@@ -1,20 +1,21 @@
 require("dotenv").config();
 const express = require("express");
+const app = express();
 const { Client, GatewayIntentBits, Collection } = require("discord.js");
 const commandHandler = require("../handlers/commandHandler");
 const roblox = require("../modules/roblox");
 const tracking = require("../tracking/rblxTracking");
 const schedule = require("node-schedule");
 const verifyAPI = require("../verification/verifyAPI");
+const postMessage = require("../routes/postMessage");
+
 const PORT = process.env.PORT || 3000;
 
-
-const app = express();
 app.use(express.json());
-
-
-const postMessage = require("../routes/postMessage");
+app.use("/verify", verifyAPI);
 app.use("/post-message", postMessage);
+
+app.get("/", (_, res) => res.send("✅ Server online"));
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
@@ -45,30 +46,6 @@ client.once("ready", async () => {
 
 client.login(process.env.DISCORD_TOKEN);
 
-app.post("/tracking", async (req, res) => {
-  const { robloxId, sessionMs, messages } = req.body;
-
-  if (!robloxId || !sessionMs) {
-    return res.status(400).send("❌ Missing required tracking data.");
-  }
-
-  try {
-    await tracking.sendShiftEmbed(client, robloxId, sessionMs, messages || 0);
-    res.status(200).send("✅ Shift data received.");
-  } catch (err) {
-    console.error("❌ Error in /tracking:", err);
-    res.status(500).send("❌ Tracking failed.");
-  }
-});
-
-app.use("/verify", verifyAPI);
-
-
-app.get("/", (_, res) => {
-  res.send("Server is online");
-});
-
-
 app.listen(PORT, () => {
-  console.log(`Express running on port ${PORT}`);
+  console.log(`🚀 Express running on port ${PORT}`);
 });
