@@ -11,7 +11,7 @@ const app = express();
 app.use(express.json());
 
 
-const postMessage = require("./routes/postMessage");
+const postMessage = require("../routes/postMessage");
 app.use("/post-message", postMessage);
 
 const client = new Client({
